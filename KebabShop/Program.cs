@@ -10,7 +10,7 @@ var app = builder.Build();
 app.MapGet("/kebabs", async (KebabDatabaseContext db) =>
     await db.Kebabs.ToListAsync());
 
-app.MapGet("/kebabs/{id}", async (int id, KebabDatabaseContext db) =>
+app.MapGet("/kebabs/{id:int}", async (int id, KebabDatabaseContext db) =>
     await db.Kebabs.FindAsync(id) is { } kebab // check for null
         ? Results.Ok(kebab) // 200 response
         : Results.NotFound()); // 404 response
@@ -26,7 +26,7 @@ app.MapPost("/kebabs", async (Kebab kebab, KebabDatabaseContext db) =>
     return Results.Created($"/kebabs/{kebab.Id}", kebab);
 });
 
-app.MapPut("/kebabs/{id}", async (int id, Kebab inputKebab, KebabDatabaseContext db) =>
+app.MapPut("/kebabs/{id:int}", async (int id, Kebab inputKebab, KebabDatabaseContext db) =>
 {
     var kebabToUpdate = await db.Kebabs.FindAsync(id);
 
