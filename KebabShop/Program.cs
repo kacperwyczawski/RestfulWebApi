@@ -53,4 +53,13 @@ app.MapPut("/kebabs/{id:int}", async (int id, Kebab inputKebab, KebabDatabaseCon
     return Results.NoContent();
 });
 
+app.MapDelete("/kebabs/{id:int}", async (int id, KebabDatabaseContext db) =>
+{
+    if (await db.Kebabs.FindAsync(id) is not { } kebab) return Results.NotFound();
+    
+    db.Kebabs.Remove(kebab);
+    await db.SaveChangesAsync();
+    return Results.Ok(kebab);
+});
+
 app.Run();
