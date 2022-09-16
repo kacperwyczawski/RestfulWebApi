@@ -2,10 +2,21 @@ using KebabShop;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 builder.Services.AddDbContext<KebabDatabaseContext>
     (options => options.UseInMemoryDatabase("KebabDatabase"));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.MapGet("/kebabs", async (KebabDatabaseContext db) =>
     await db.Kebabs.ToListAsync());
