@@ -43,10 +43,10 @@ app.MapPut("/kebabs/{id:int}", async (int id, Kebab inputKebab, KebabDatabaseCon
 
     if (kebabToUpdate is null)
         return Results.NotFound();
-    
-    // ReSharper disable once RedundantAssignment
-    kebabToUpdate = kebabToUpdate with
-        { Name = inputKebab.Name, IsVege = inputKebab.IsVege, Price = inputKebab.Price };
+
+    kebabToUpdate.Name = inputKebab.Name;
+    kebabToUpdate.IsVege = inputKebab.IsVege;
+    kebabToUpdate.Price = inputKebab.Price;
     
     await db.SaveChangesAsync();
 
