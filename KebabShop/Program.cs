@@ -6,9 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<KebabDatabaseContext>
-    (options => options.UseInMemoryDatabase("KebabDatabase"));
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+builder.Services.AddSqlite<KebabContext>("Data Source=Kebab.db");
 
 var app = builder.Build();
 
@@ -18,48 +16,58 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapGet("/kebabs", async (KebabDatabaseContext db) =>
-    await db.Kebabs.ToListAsync());
+app.MapGet("/kebabs", async (KebabContext db) =>
+    await db.Kebabs
+        .AsNoTracking()
+        .ToListAsync());
 
-app.MapGet("/kebabs/{id:int}", async (int id, KebabDatabaseContext db) =>
-    await db.Kebabs.FindAsync(id) is { } kebab // check for null
-        ? Results.Ok(kebab) // 200 response
-        : Results.NotFound()); // 404 response
+app.MapGet("/kebabs/{id:int}", async (int id, KebabContext db) =>
+    await db.Kebabs
+        .AsNoTracking()
+        .FirstOrDefaultAsync(k => k.Id == id));
 
-app.MapGet("/kebabs/vege", async (KebabDatabaseContext db) =>
-    await db.Kebabs.Where(kebab => kebab.IsVege).ToListAsync());
+app.MapGet("/kebabs/vege", async (KebabContext db) =>
+    await db.Kebabs
+        .AsNoTracking()
+        .Where(k => k.IsVege)
+        .ToListAsync());
 
-app.MapPost("/kebabs", async (Kebab kebab, KebabDatabaseContext db) =>
+app.MapPost("/kebabs", async (Kebab kebab, KebabContext db) =>
 {
     db.Kebabs.Add(kebab);
     await db.SaveChangesAsync();
-
+    
     return Results.Created($"/kebabs/{kebab.Id}", kebab);
 });
 
-app.MapPut("/kebabs/{id:int}", async (int id, Kebab inputKebab, KebabDatabaseContext db) =>
+app.MapPut("/kebabs/{id:int}", async (int id, Kebab inputKebab, KebabContext db) =>
 {
     var kebabToUpdate = await db.Kebabs.FindAsync(id);
-
+        
     if (kebabToUpdate is null)
         return Results.NotFound();
 
     kebabToUpdate.Name = inputKebab.Name;
     kebabToUpdate.IsVege = inputKebab.IsVege;
     kebabToUpdate.Price = inputKebab.Price;
-    
-    await db.SaveChangesAsync();
 
+    db.Kebabs.Update(kebabToUpdate);
+    await db.SaveChangesAsync();
+    
     return Results.NoContent();
 });
 
-app.MapDelete("/kebabs/{id:int}", async (int id, KebabDatabaseContext db) =>
+app.MapDelete("/kebabs/{id:int}", async (int id, KebabContext db) =>
 {
-    if (await db.Kebabs.FindAsync(id) is not { } kebab) return Results.NotFound();
+    var kebabToDelete = await db.Kebabs.FindAsync(id);
     
-    db.Kebabs.Remove(kebab);
+    if (kebabToDelete is null)
+        return Results.NotFound();
+    
+    db.Kebabs.Remove(kebabToDelete);
     await db.SaveChangesAsync();
-    return Results.Ok(kebab);
+    
+    return Results.NoContent();
 });
 
 app.Run();
